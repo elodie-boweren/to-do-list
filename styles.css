@@ -110,6 +110,7 @@ select{
     padding: 0.5rem;
     margin-left: 75%;
     margin-top: 3px;
+    margin-bottom: 4rem;
     cursor: pointer;
 }
    
@@ -237,7 +238,7 @@ h1 {
     flex-grow: 1;
     background-color: white;
     color: black;
-    height: 2rem;
+    height: auto;
     border-radius: 8px;
     box-shadow: -1px 1px 1px rgb(194, 192, 192);
 }
