@@ -1,4 +1,4 @@
-const themeBtn = document.getElementById("theme-btn");
+const themeSelect = document.getElementById("theme-select");
 const taskList = document.getElementById("task-list");
 const newItemInput = document.getElementById("new-task-input");
 const addBtn = document.getElementById("add-btn");
@@ -15,16 +15,18 @@ const filters = document.querySelectorAll(".filter");
 const emptyImage = document.querySelector(".empty-image");
 
 let currentFilter = "all";
-let themeIndex = 0;
 
 // Theme change
 const themes = ["default", "dark", "colored"];
-themeBtn.addEventListener("click", () => {
-  document.body.classList.remove(...themes);
-  themeIndex = (themeIndex + 1) % themes.length;
-  document.body.classList.add(themes[themeIndex]);
-});
+const themeKey = "theme";
 
+themeSelect.addEventListener("change", (event) => {
+  const selectedTheme = event.target.value;
+  document.body.classList.remove(...themes);
+  document.body.classList.add(selectedTheme);
+  // Save theme to local storage
+  localStorage.setItem('themeKey', selectedTheme);
+});
 
 // Display or hide empty list image
 const toggleEmptyState = () => {
@@ -229,6 +231,8 @@ function updateRemainingTasks() {
   const items = taskList.querySelectorAll(".item");
   let activeCount = 0;
 
+  console.log(items);
+
   items.forEach((li) => {
     const checkbox = li.querySelector(".checkbox");
     if (!checkbox.checked) activeCount++;
@@ -274,11 +278,23 @@ const saveTaskToLocalStorage = () => {
 const loadTaskFromLocalStorage = () => {
   const savedTasks = JSON.parse(localStorage.getItem('tasks')) || [];
 
+  console.log(savedTasks);
+
   savedTasks.forEach(({ text, completed }) => {
     newItemInput.value = text;
     addNewItem(false); 
 
     const lastLi = taskList.querySelector('li:last-child');
+
+    const isEmpty = lastLi.querySelector('.task-text').textContent;
+
+    console.log("isEmpty", isEmpty);
+    console.log("name", text);
+
+    if (isEmpty !== text) {
+      console.log("HERE")
+      return;
+    }
 
     if (completed) {
       const checkbox = lastLi.querySelector('.checkbox');
@@ -286,29 +302,37 @@ const loadTaskFromLocalStorage = () => {
       lastLi.querySelector('.task-text').classList.add('crossed');
     }
   });
-
-  toggleEmptyState();
-  updateProgress();
-  saveTaskToLocalStorage();
 };
 
+clearAllBtn.addEventListener("click", clearAll);
 function clearAll () {
-  clearAllBtn.addEventListener("click", () => {
+  if (confirm("This will delete all tasks PERMANENTLY, please confirm")) {
     const tasks = taskList.querySelectorAll("li");
     tasks.forEach(li => li.remove());
     // Remove local storage
     localStorage.removeItem("tasks");
-  });
+  } else {
+    return;
+  };
 
-  applyFilter();
-  toggleEmptyState();
-  updateRemainingTasks();
+  init();
   }
 
-loadTaskFromLocalStorage();
-setActiveFilter(showAllBtn);
-updateRemainingTasks();
-displayClearCompletedBtn();
-clearAll();
+function init() {
+  loadTaskFromLocalStorage();
+  setActiveFilter(showAllBtn);
+  updateRemainingTasks();
+  displayClearCompletedBtn();
+  toggleEmptyState();
+ 
+  // Apply last theme applied
+  const savedTheme = localStorage.getItem('themeKey');
+  const themeToApply = themes.includes(savedTheme) ? savedTheme : "default";
+  document.body.classList.remove(...themes);
+  document.body.classList.add(themeToApply);
+  themeSelect.value= themeToApply;
+}
+
+init();
 
 

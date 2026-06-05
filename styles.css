@@ -7,20 +7,17 @@
 :root {
     /*Default theme */
     --purple-color: rgb(137, 98, 243);
-    --main-grey: rgb(107, 103, 103);
     --purple-light-hover-transparency: rgba(137, 98, 243, 0.5);
-    --light-bg: rgb(247, 245, 245);
+    --light-bg: rgb(235, 227, 227);
 
     /* Tutti Frutti theme */
-    --primary-color-font: white;
-    --primary-color-button: black;
     --colored-bg: linear-gradient(217deg, rgb(255 0 0 / 80%), transparent 70.71%),
     linear-gradient(127deg, rgb(0 255 0 / 80%), transparent 70.71%),
     linear-gradient(336deg, rgb(0 0 255 / 80%), transparent 70.71%);
 
     /* dark mode */
     --dark-mode-bg:rgb(48, 31, 95);
-    --dark-mode-color: white;
+    --dark-mode-font-color: rgb(230, 198, 198);
 }
 
 body {
@@ -35,66 +32,104 @@ main {
     padding: 2%;
     background-color: transparent;
 }
-
-/* Color themes */
-body.default {
+/* Themes */
+/* Default theme */
+body {
     background-color:var(--light-bg);
-    color: var(--primary-color-button);
+    color: black;
 }
 
+body select{
+    background-color: var(--light-bg);
+    border: 1px solid black;
+    color: black;
+}
+
+select:hover{
+    color:white;
+    background-color: var(--purple-light-hover-transparency);
+}
+
+/* Dark theme */
 body.dark {
     background-color: var(--dark-mode-bg);
-    color:var(--dark-mode-color);
+    color:var(--dark-mode-font-color);
 }
 
-body.dark #theme-btn {
-    border: white;
+body.dark select {
+    background-color: transparent;
+    border: 1px solid var(--dark-mode-font-color);
+    color: var(--dark-mode-font-color);
 }
 
-body.colored main {
-    background:linear-gradient(217deg, rgb(255 0 0 / 80%), transparent 70.71%),
-    linear-gradient(127deg, rgb(0 255 0 / 80%), transparent 70.71%),
-    linear-gradient(336deg, rgb(0 0 255 / 80%), transparent 70.71%);
-}
-
-body.colored #theme-btn {
-    background:linear-gradient(217deg, rgb(255 0 0 / 80%), transparent 70.71%),
-    linear-gradient(127deg, rgb(0 255 0 / 80%), transparent 70.71%),
-    linear-gradient(336deg, rgb(0 0 255 / 80%), transparent 70.71%);
+body.dark select:hover{
+    color:var(--dark-mode-font-color);
+    background-color: var(--purple-light-hover-transparency);
     border: none;
-  }
-
-  body.colored #theme-btn:hover {
-    background-color: var(--purple-color);
-    background-image: none;
-  }
-
-  body.colored .filter.active {
-    color:var(--primary-color-button);
-    border-bottom: 2px solid var(--primary-color-button);
+    transform: scale(1.1);
 }
 
-  body.colored .remaining-count {
-    color: yellow;
-  }
+/* Colored theme */
+body.colored main {
+    background-color: var(--light-bg);
+    background:linear-gradient(217deg, rgb(255 0 0 / 80%), transparent 70.71%),
+    linear-gradient(127deg, rgb(0 255 0 / 80%), transparent 70.71%),
+    linear-gradient(336deg, rgb(0 0 255 / 80%), transparent 70.71%);
+}
 
-  /* Change theme button */
-#theme-btn {
-    background-color: var(--purple-color);
-    color: white;
-    font-weight: 500;
+body.colored select {
+    background:linear-gradient(217deg, rgb(255 0 0 / 80%), transparent 70.71%),
+    linear-gradient(127deg, rgb(0 255 0 / 80%), transparent 70.71%),
+    linear-gradient(336deg, rgb(0 0 255 / 80%), transparent 70.71%);
+    color: black;
+    border: none;
+}
+
+body.colored select:hover {
+    background-image: none;
+    color: black;
+    background-color: var(--purple-light-hover-transparency);
+    border: none;
+    transform: scale(1.1);
+}
+
+body.colored .filter.active {
+    color:black;
+    border-bottom: 2px solid black;
+}
+
+body.colored .remaining-count {
+    color: yellow;
+}
+
+/* Change theme button */
+select{
     border-radius: 12px;
+    border: 1px solid black;
+    color: transparent;
     padding: 0.5rem;
     margin-left: 75%;
     margin-top: 3px;
     cursor: pointer;
-    border: none;
 }
-
-#theme-btn:hover {
-    color:white;
+   
+select:hover{
     border: none;
     transform: scale(1.1);
+    color:black;
+    background-color: var(--purple-light-hover-transparency);
+}
+
+select, 
+select::picker(select) {
+    appearance:base-select;
+}
+
+select::picker(select) {
+    background-color: transparent;
+    border-radius: 8px ;
+    border:none;
+    color: inherit;
 }
 
 /* Main container */
@@ -255,6 +290,7 @@ h1 {
     cursor: pointer;
 }
 
+/* For both clear buttons*/
 .clear-btn-container {
     display: flex;
     justify-content: center;
