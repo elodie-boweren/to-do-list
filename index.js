@@ -51,6 +51,7 @@ function addNewItem(save = true) {
 
   const newLi = document.createElement("li");
   newLi.classList.add("item");
+  newLi.setAttribute("draggable", "true");
 
   newLi.innerHTML = `
     <input class="checkbox" type="checkbox" aria-label="checkbox">
@@ -80,6 +81,23 @@ function addNewItem(save = true) {
     return;
   }
 }
+
+// Drag and drop items
+taskList.addEventListener("dragstart", (event) => {
+  let selected = event.target.closest(".item");
+  if (!selected) return;
+  
+  taskList.addEventListener("dragover", (event) => {
+    event.preventDefault();
+  });
+
+  taskList.addEventListener("drop", (event) => {
+    taskList.prepend(selected);
+    selected = "";
+    saveTaskToLocalStorage();
+  });
+
+});
 
 // Event listener on taskList to update and delete items
 taskList.addEventListener("click", (event) => {
