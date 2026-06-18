@@ -2,6 +2,7 @@ const themeSelect = document.getElementById("theme-select");
 const taskList = document.getElementById("task-list");
 const newItemInput = document.getElementById("new-task-input");
 const addBtn = document.getElementById("add-btn");
+const PriorityOption = document.getElementById("priority-button");
 
 const showAllBtn = document.getElementById("show-all-tasks");
 const activeBtn = document.getElementById("task-status-active");
@@ -15,6 +16,26 @@ const filters = document.querySelectorAll(".filter");
 const emptyImage = document.querySelector(".empty-image");
 
 let currentFilter = "all";
+
+// Point out old tasks (over 7 days)
+const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000; 
+
+function formatTaskDate(timestamp) {
+  return new Date(timestamp).toLocaleDateString('en-UK', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  });
+}
+
+function isOlderThan7Days(timestamp) {
+  return Date.now() - Number(timestamp) >= SEVEN_DAYS;
+}
+
+function applyTaskAgeStyle(li, createdAt) {
+  li.classList.toggle("item-old", isOlderThan7Days(createdAt));
+}
 
 // Theme change
 const themes = ["default", "dark", "colored"];
@@ -38,49 +59,69 @@ const toggleEmptyState = () => {
   emptyImage.style.display = visibleItem === 0 ? "block" : "none";
 };
 
+// set priority tasks
+// taskList.addEventListener("click", togglePriority);
+
+// const togglePriority = () => {
+
+// }
+
 // Add a task
 addBtn.addEventListener("click", addNewItem);
 newItemInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") addNewItem();
 });
 
-function addNewItem(save = true) {
-  const value = newItemInput.value.trim();
+function addNewItem(save = true, taskData = null) {
+  const value = taskData?.text ?? newItemInput.value.trim();
 
   if (value !== "") {
+    const createdAt = taskData?.createdAt ?? Date.now();
+    const completed = taskData?.completed ?? false;
 
-  const newLi = document.createElement("li");
-  newLi.classList.add("item");
-  newLi.setAttribute("draggable", "true");
+  
+    const newLi = document.createElement("li");
+    newLi.classList.add("item");
+    newLi.setAttribute("draggable", "true");
+    newLi.dataset.createdAt = createdAt;
 
-  newLi.innerHTML = `
-    <input class="checkbox" type="checkbox" aria-label="checkbox">
+    newLi.innerHTML = `
+  <input class="checkbox" type="checkbox" aria-label="checkbox" ${completed ? "checked" : ""}>
+
+  <div class="task-main">
     <span class="task-text"></span>
-    <div class="icons">
-      <img class="edit-task" src="edit_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" alt="Edit">
-      <img class="delete-task" src="delete_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" alt="Delete">
-    </div>
-  `;
+    <small class="task-date">Added on ${formatTaskDate(createdAt)}</small>
+  </div>
 
-  newLi.querySelector(".task-text").textContent = value;
+  <div class="icons">
+    <img class="edit-task" src="edit_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" alt="Edit">
+    <img class="delete-task" src="delete_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" alt="Delete">
+  </div>
+`;
 
-  taskList.appendChild(newLi);
-  newItemInput.value = "";
+    newLi.querySelector(".task-text").textContent = value;
+    if (completed) {
+      newLi.querySelector(".task-text").classList.add("crossed");
+    }
+  
+    applyTaskAgeStyle(newLi, createdAt);
+  
+    taskList.appendChild(newLi);
+  
+    if (!taskData) newItemInput.value = "";
+  
+    applyFilter();
+    updateRemainingTasks();
+    displayClearCompletedBtn();
+    toggleEmptyState();
+  
+    if (save) saveTaskToLocalStorage();
 
-  applyFilter();
-  updateRemainingTasks();
-  displayClearCompletedBtn();
-  toggleEmptyState();
-
-  if (save) {
-    saveTaskToLocalStorage();
-  }
-
-  } else {
-    alert("Enter a task (field cannot be empty)");
-    return;
-  }
-}
+    } else {
+      if (!taskData) alert("Enter a task (field cannot be empty)");
+      return;
+    }
+};
 
 // Drag and drop items
 taskList.addEventListener("dragstart", (event) => {
@@ -249,8 +290,6 @@ function updateRemainingTasks() {
   const items = taskList.querySelectorAll(".item");
   let activeCount = 0;
 
-  console.log(items);
-
   items.forEach((li) => {
     const checkbox = li.querySelector(".checkbox");
     if (!checkbox.checked) activeCount++;
@@ -287,38 +326,21 @@ const Confetti = () => {
 // Local Storage
 const saveTaskToLocalStorage = () => {
   const tasks = Array.from(taskList.querySelectorAll("li")).map(li => ({
-    text: li.querySelector('span').textContent,
-    completed: li.querySelector(".checkbox").checked
+    text: li.querySelector('.task-text').textContent,
+    completed: li.querySelector(".checkbox").checked,
+    createdAt: Number(li.dataset.createdAt) || Date.now()
   }));
   localStorage.setItem("tasks", JSON.stringify(tasks));
 }
 
 const loadTaskFromLocalStorage = () => {
   const savedTasks = JSON.parse(localStorage.getItem('tasks')) || [];
-
-  console.log(savedTasks);
-
-  savedTasks.forEach(({ text, completed }) => {
-    newItemInput.value = text;
-    addNewItem(false); 
-
-    const lastLi = taskList.querySelector('li:last-child');
-
-    const isEmpty = lastLi.querySelector('.task-text').textContent;
-
-    console.log("isEmpty", isEmpty);
-    console.log("name", text);
-
-    if (isEmpty !== text) {
-      console.log("HERE")
-      return;
-    }
-
-    if (completed) {
-      const checkbox = lastLi.querySelector('.checkbox');
-      checkbox.checked = true;
-      lastLi.querySelector('.task-text').classList.add('crossed');
-    }
+  savedTasks.forEach(task => {
+    addNewItem(false, {
+      text: task.text,
+      completed: task.completed,
+      createdAt: task.createdAt || Date.now()
+    });
   });
 };
 
@@ -349,6 +371,13 @@ function init() {
   document.body.classList.remove(...themes);
   document.body.classList.add(themeToApply);
   themeSelect.value= themeToApply;
+
+  // bonus: to check for old tasks regularly
+  setInterval(() => {
+    taskList.querySelectorAll(".item").forEach(li => {
+      applyTaskAgeStyle(li, li.dataset.createdAt);
+    });
+  }, 60 * 1000);
 }
 
 init();

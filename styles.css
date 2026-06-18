@@ -9,6 +9,7 @@
     --purple-color: rgb(137, 98, 243);
     --purple-light-hover-transparency: rgba(137, 98, 243, 0.5);
     --light-bg: rgb(235, 227, 227);
+    --priority-color: lightcoral;
 
     /* Tutti Frutti theme */
     --colored-bg: linear-gradient(217deg, rgb(255 0 0 / 80%), transparent 70.71%),
@@ -45,11 +46,6 @@ body select{
     color: black;
 }
 
-select:hover{
-    color:white;
-    background-color: var(--purple-light-hover-transparency);
-}
-
 /* Dark theme */
 body.dark {
     background-color: var(--dark-mode-bg);
@@ -67,6 +63,10 @@ body.dark select:hover{
     background-color: var(--purple-light-hover-transparency);
     border: none;
     transform: scale(1.1);
+}
+
+body.dark #priority-button {
+    background-color: var(--priority-color);
 }
 
 /* Colored theme */
@@ -100,6 +100,10 @@ body.colored .filter.active {
 
 body.colored .remaining-count {
     color: yellow;
+}
+
+body.colored #priority-button {
+    background-color: yellow;
 }
 
 /* Change theme button */
@@ -187,6 +191,45 @@ h1 {
     border: none;
     transform: scale(1.1);
 }
+/* 
+.datetime-input {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    width: 100%;
+}
+.date-input, .time-input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid white;
+    border-radius: 8px;
+    box-shadow: -1px 1px 1px rgb(194, 192, 192);
+} */
+
+#priority {
+    margin: 0.5rem auto;
+    display: flex;
+    align-items: center;
+    border: 2px solid white;
+    padding: 0.5rem;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+#priority-button {
+    height: 30px;
+    width: 30px;
+    border-radius: 50%;
+    border: none;
+    flex-shrink: 0;
+    background-color: var(--priority-color);
+    cursor: pointer;
+}
+
+.priority-label {
+    margin-left: 10px;
+    cursor: pointer;
+}
 
 /* Dividing line (filters and tasks left) */
 #filters {
@@ -232,7 +275,9 @@ h1 {
 }
 
 .item {
-    align-items: center;
+    align-items: flex-start;
+    display:flex;
+    gap: 10px;
     margin-top: 2vh;
     padding: 1em 0.5em;
     flex-grow: 1;
@@ -273,7 +318,30 @@ h1 {
     font-weight: 600;
     padding-bottom: 1px;
 }
+ 
+.task-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1;                
+    min-width: 0;
+  }
 
+  .task-text {
+    word-break: break-word;
+  }
+
+.task-date {
+    margin-top: 2px;
+    font-size: 0.78rem;
+    opacity: 0.65;
+}
+  
+.item-old {
+    background-color: #ffe3e3; 
+    border-left: 4px solid var(--priority-color);
+}
+
+  
 .crossed {
     text-decoration: line-through;
     opacity: 0.6;
@@ -283,6 +351,7 @@ h1 {
     display: flex;
     gap: 8px;
     margin-left: auto;
+    align-self: center;
 }
 
 .icons img {
