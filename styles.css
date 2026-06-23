@@ -65,10 +65,6 @@ body.dark select:hover{
     transform: scale(1.1);
 }
 
-body.dark #priority-button {
-    background-color: var(--priority-color);
-}
-
 /* Colored theme */
 body.colored main {
     background-color: var(--light-bg);
@@ -102,8 +98,16 @@ body.colored .remaining-count {
     color: yellow;
 }
 
-body.colored #priority-button {
+body.colored .priority-button {
     background-color: yellow;
+}
+
+body.colored .item-priority {
+    background-color: yellow;
+}
+
+body.colored .priority-btn-on {
+    background-color: white;
 }
 
 /* Change theme button */
@@ -206,29 +210,18 @@ h1 {
     box-shadow: -1px 1px 1px rgb(194, 192, 192);
 } */
 
-#priority {
-    margin: 0.5rem auto;
-    display: flex;
-    align-items: center;
-    border: 2px solid white;
-    padding: 0.5rem;
-    border-radius: 12px;
-    cursor: pointer;
-}
-
-#priority-button {
-    height: 30px;
-    width: 30px;
+.priority-button {
+    height: 15px;
+    width: 15px;
     border-radius: 50%;
-    border: none;
+    border: 1px solid black;
     flex-shrink: 0;
     background-color: var(--priority-color);
     cursor: pointer;
 }
 
-.priority-label {
-    margin-left: 10px;
-    cursor: pointer;
+.priority-btn-on {
+    background-color: white;
 }
 
 /* Dividing line (filters and tasks left) */
@@ -292,6 +285,10 @@ h1 {
     background-color : var(--purple-light-hover-transparency);
 }
 
+.item-priority {
+    background-color: var(--priority-color);
+}
+
 .checkbox {
     margin: 0px 8px;
     background: transparent;
@@ -324,11 +321,11 @@ h1 {
     flex-direction: column;
     flex: 1;                
     min-width: 0;
-  }
+}
 
-  .task-text {
+.task-text {
     word-break: break-word;
-  }
+}
 
 .task-date {
     margin-top: 2px;

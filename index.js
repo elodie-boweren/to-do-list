@@ -59,13 +59,6 @@ const toggleEmptyState = () => {
   emptyImage.style.display = visibleItem === 0 ? "block" : "none";
 };
 
-// set priority tasks
-// taskList.addEventListener("click", togglePriority);
-
-// const togglePriority = () => {
-
-// }
-
 // Add a task
 addBtn.addEventListener("click", addNewItem);
 newItemInput.addEventListener("keydown", (event) => {
@@ -78,7 +71,7 @@ function addNewItem(save = true, taskData = null) {
   if (value !== "") {
     const createdAt = taskData?.createdAt ?? Date.now();
     const completed = taskData?.completed ?? false;
-
+    const priority = taskData?.priority ?? false;
   
     const newLi = document.createElement("li");
     newLi.classList.add("item");
@@ -94,6 +87,7 @@ function addNewItem(save = true, taskData = null) {
   </div>
 
   <div class="icons">
+    <button class="priority-button"></button>
     <img class="edit-task" src="edit_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" alt="Edit">
     <img class="delete-task" src="delete_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" alt="Delete">
   </div>
@@ -104,6 +98,14 @@ function addNewItem(save = true, taskData = null) {
       newLi.querySelector(".task-text").classList.add("crossed");
     }
   
+    if (priority) {
+      newLi.classList.add("item-priority");
+      const priorityBtn = newLi.querySelector(".priority-button");
+      if (priorityBtn) {
+        priorityBtn.classList.add("priority-btn-on");
+      }
+    }
+
     applyTaskAgeStyle(newLi, createdAt);
   
     taskList.appendChild(newLi);
@@ -140,7 +142,7 @@ taskList.addEventListener("dragstart", (event) => {
 
 });
 
-// Event listener on taskList to update and delete items
+// Event listener on taskList to manage events
 taskList.addEventListener("click", (event) => {
   const li = event.target.closest(".item");
   if (!li) return;
@@ -193,6 +195,13 @@ taskList.addEventListener("click", (event) => {
         saveEdit();
       }
     })
+  }
+
+  // Change colour of task to prioritize
+  if (event.target.classList.contains("priority-button")) {
+    li.classList.toggle("item-priority");
+    event.target.classList.toggle("priority-btn-on");
+    saveTaskToLocalStorage()
   }
 });
 
@@ -328,7 +337,8 @@ const saveTaskToLocalStorage = () => {
   const tasks = Array.from(taskList.querySelectorAll("li")).map(li => ({
     text: li.querySelector('.task-text').textContent,
     completed: li.querySelector(".checkbox").checked,
-    createdAt: Number(li.dataset.createdAt) || Date.now()
+    createdAt: Number(li.dataset.createdAt) || Date.now(),
+    priority: li.classList.contains('item-priority')
   }));
   localStorage.setItem("tasks", JSON.stringify(tasks));
 }
@@ -339,7 +349,8 @@ const loadTaskFromLocalStorage = () => {
     addNewItem(false, {
       text: task.text,
       completed: task.completed,
-      createdAt: task.createdAt || Date.now()
+      createdAt: task.createdAt || Date.now(),
+      priority: task.priority
     });
   });
 };
