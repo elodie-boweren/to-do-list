@@ -1,0 +1,54 @@
+{
+  "tasks": [
+    {
+      "id": "1",
+      "text": "prendre rdv vaccins+ identification chat",
+      "createdAt": 1781855546637,
+      "completed": false,
+      "priority": true
+    },
+    {
+      "id": "2",
+      "text": "cadeau maitresse",
+      "createdAt": 1781855579190,
+      "completed": true,
+      "priority": false
+    },
+    {
+      "id": "3",
+      "text": "faire les lots de tombola",
+      "createdAt": 1782112160762,
+      "completed": true,
+      "priority": false
+    },
+    {
+      "id": "4",
+      "text": "dormir",
+      "createdAt": 1781791639513,
+      "completed": true,
+      "priority": false
+    },
+    {
+      "id": "5",
+      "text": "réserver vacances",
+      "createdAt": 1781791647233,
+      "completed": false,
+      "priority": false
+    },
+    {
+      "id": "6",
+      "text": "passer sur les API et asynchrone",
+      "createdAt": 1781791653716,
+      "completed": false,
+      "priority": false
+    },
+    {
+      "id": "7",
+      "text": "cadeau crèche",
+      "createdAt": 1781791672034,
+      "completed": true,
+      "priority": false
+    }
+  ],
+  "$schema": "./node_modules/json-server/schema.json"
+}

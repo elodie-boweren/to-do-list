@@ -65,7 +65,7 @@ newItemInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") addNewItem();
 });
 
-function addNewItem(save = true, taskData = null) {
+async function addNewItem(save = true, taskData = null) {
   const value = taskData?.text ?? newItemInput.value.trim();
 
   if (value !== "") {
@@ -94,6 +94,24 @@ function addNewItem(save = true, taskData = null) {
 `;
 
     newLi.querySelector(".task-text").textContent = value;
+
+    if (save) {
+      const res = await fetch('http://localhost:3000/tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          text: value,
+          createdAt: createdAt,
+          completed: completed,
+          priority: priority
+        })
+      });
+      const createdTask = await res.json();
+      newLi.dataset.id = createdTask.id;
+      }
+
     if (completed) {
       newLi.querySelector(".task-text").classList.add("crossed");
     }
@@ -116,8 +134,6 @@ function addNewItem(save = true, taskData = null) {
     updateRemainingTasks();
     displayClearCompletedBtn();
     toggleEmptyState();
-  
-    if (save) saveTaskToLocalStorage();
 
     } else {
       if (!taskData) alert("Enter a task (field cannot be empty)");
@@ -137,7 +153,7 @@ taskList.addEventListener("dragstart", (event) => {
   taskList.addEventListener("drop", (event) => {
     taskList.prepend(selected);
     selected = "";
-    saveTaskToLocalStorage();
+    saveTaskToServer();
   });
 
 });
@@ -150,17 +166,16 @@ taskList.addEventListener("click", (event) => {
   // Delete a task using the icon
   if (event.target.classList.contains("delete-task")) {
 
-    if (confirm("Are you sure you want to delete this item FOREVER???")) {
+    if (confirm("Delete this item FOREVER???")) {
       li.remove();
     updateRemainingTasks();
     displayClearCompletedBtn();
     toggleEmptyState();
-    saveTaskToLocalStorage()
+    saveTaskToServer()
     return;
     } else {
       return;
     }
-    
   }
 
   // Modify a task using the icon
@@ -186,7 +201,7 @@ taskList.addEventListener("click", (event) => {
       } else {
         input.replaceWith(currentTask);
       }
-      saveTaskToLocalStorage()
+      saveTaskToServer()
     };
 
     input.addEventListener("blur", saveEdit);
@@ -201,7 +216,7 @@ taskList.addEventListener("click", (event) => {
   if (event.target.classList.contains("priority-button")) {
     li.classList.toggle("item-priority");
     event.target.classList.toggle("priority-btn-on");
-    saveTaskToLocalStorage()
+    saveTaskToServer()
   }
 });
 
@@ -264,7 +279,7 @@ taskList.addEventListener("change", (event) => {
   applyFilter(); 
   displayClearCompletedBtn();
   updateProgress();
-  saveTaskToLocalStorage()
+  saveTaskToServer()
 });
 
 function displayClearCompletedBtn() {
@@ -291,7 +306,7 @@ clearCompletedBtn.addEventListener("click", () => {
   applyFilter();
   displayClearCompletedBtn();
   toggleEmptyState();
-  saveTaskToLocalStorage()
+  saveTaskToServer()
 });
 
 // Update remaining active tasks
@@ -332,28 +347,19 @@ const Confetti = () => {
   });
 };
 
-// Local Storage
-const saveTaskToLocalStorage = () => {
-  const tasks = Array.from(taskList.querySelectorAll("li")).map(li => ({
-    text: li.querySelector('.task-text').textContent,
-    completed: li.querySelector(".checkbox").checked,
-    createdAt: Number(li.dataset.createdAt) || Date.now(),
-    priority: li.classList.contains('item-priority')
-  }));
-  localStorage.setItem("tasks", JSON.stringify(tasks));
-}
-
-const loadTaskFromLocalStorage = () => {
-  const savedTasks = JSON.parse(localStorage.getItem('tasks')) || [];
-  savedTasks.forEach(task => {
+const loadTaskFromServer = async () => {
+  let uri = 'http://localhost:3000/tasks?_sort=createdAt';
+  const res = await fetch(uri);
+  const tasks = await res.json();
+  tasks.forEach(task => {
     addNewItem(false, {
       text: task.text,
       completed: task.completed,
-      createdAt: task.createdAt || Date.now(),
+      createdAt: task.createdAt,
       priority: task.priority
     });
   });
-};
+}
 
 clearAllBtn.addEventListener("click", clearAll);
 function clearAll () {
@@ -370,7 +376,7 @@ function clearAll () {
   }
 
 function init() {
-  loadTaskFromLocalStorage();
+  loadTaskFromServer();
   setActiveFilter(showAllBtn);
   updateRemainingTasks();
   displayClearCompletedBtn();
@@ -392,5 +398,3 @@ function init() {
 }
 
 init();
-
-
