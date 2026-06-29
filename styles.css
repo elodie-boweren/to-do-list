@@ -46,6 +46,10 @@ body select{
     color: black;
 }
 
+body .item-priority {
+    background-color: var(--priority-color);
+}
+
 /* Dark theme */
 body.dark {
     background-color: var(--dark-mode-bg);
@@ -96,18 +100,6 @@ body.colored .filter.active {
 
 body.colored .remaining-count {
     color: yellow;
-}
-
-body.colored .priority-button {
-    background-color: yellow;
-}
-
-body.colored .item-priority {
-    background-color: yellow;
-}
-
-body.colored .priority-btn-on {
-    background-color: white;
 }
 
 /* Change theme button */
@@ -283,10 +275,6 @@ h1 {
 
 .item:hover {
     background-color : var(--purple-light-hover-transparency);
-}
-
-.item-priority {
-    background-color: var(--priority-color);
 }
 
 .checkbox {

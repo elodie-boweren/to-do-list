@@ -8,27 +8,6 @@
       "priority": true
     },
     {
-      "id": "2",
-      "text": "cadeau maitresse",
-      "createdAt": 1781855579190,
-      "completed": true,
-      "priority": false
-    },
-    {
-      "id": "3",
-      "text": "faire les lots de tombola",
-      "createdAt": 1782112160762,
-      "completed": true,
-      "priority": false
-    },
-    {
-      "id": "4",
-      "text": "dormir",
-      "createdAt": 1781791639513,
-      "completed": true,
-      "priority": false
-    },
-    {
       "id": "5",
       "text": "réserver vacances",
       "createdAt": 1781791647233,
@@ -43,11 +22,11 @@
       "priority": false
     },
     {
-      "id": "7",
-      "text": "cadeau crèche",
-      "createdAt": 1781791672034,
-      "completed": true,
-      "priority": false
+      "text": "test",
+      "createdAt": 1782719755440,
+      "completed": false,
+      "priority": false,
+      "id": "SsbTQnkNQVA"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"

@@ -72,11 +72,13 @@ async function addNewItem(save = true, taskData = null) {
     const createdAt = taskData?.createdAt ?? Date.now();
     const completed = taskData?.completed ?? false;
     const priority = taskData?.priority ?? false;
+    const id = taskData?.id ?? null;
   
     const newLi = document.createElement("li");
     newLi.classList.add("item");
     newLi.setAttribute("draggable", "true");
     newLi.dataset.createdAt = createdAt;
+    newLi.dataset.id = id;
 
     newLi.innerHTML = `
   <input class="checkbox" type="checkbox" aria-label="checkbox" ${completed ? "checked" : ""}>
@@ -144,6 +146,7 @@ async function addNewItem(save = true, taskData = null) {
 // Drag and drop items
 taskList.addEventListener("dragstart", (event) => {
   let selected = event.target.closest(".item");
+  const id = selected.dataset.id;
   if (!selected) return;
   
   taskList.addEventListener("dragover", (event) => {
@@ -152,27 +155,26 @@ taskList.addEventListener("dragstart", (event) => {
 
   taskList.addEventListener("drop", (event) => {
     taskList.prepend(selected);
-    selected = "";
-    saveTaskToServer();
+    selected = null;
+    updateTask(id, {});
   });
-
 });
 
 // Event listener on taskList to manage events
-taskList.addEventListener("click", (event) => {
+taskList.addEventListener("click", async (event) => {
   const li = event.target.closest(".item");
-  if (!li) return;
+  // Get ID by element <li>
+  const id = li?.dataset.id;
 
   // Delete a task using the icon
   if (event.target.classList.contains("delete-task")) {
 
     if (confirm("Delete this item FOREVER???")) {
-      li.remove();
-    updateRemainingTasks();
-    displayClearCompletedBtn();
-    toggleEmptyState();
-    saveTaskToServer()
-    return;
+      deleteTask(id);
+      updateRemainingTasks();
+      displayClearCompletedBtn();
+      toggleEmptyState();
+      return;
     } else {
       return;
     }
@@ -190,7 +192,7 @@ taskList.addEventListener("click", (event) => {
     currentTask.replaceWith(input);
     input.focus();
 
-    const saveEdit = () =>  {
+    const saveEdit = async () =>  {
       const newText = input.value.trim();
 
       if (newText !== "") {
@@ -198,10 +200,10 @@ taskList.addEventListener("click", (event) => {
         newSpan.className = "task-text";
         newSpan.textContent = newText;
         input.replaceWith(newSpan);
+        const updated = await updateTask(id, { text: newText });
       } else {
         input.replaceWith(currentTask);
       }
-      saveTaskToServer()
     };
 
     input.addEventListener("blur", saveEdit);
@@ -216,7 +218,8 @@ taskList.addEventListener("click", (event) => {
   if (event.target.classList.contains("priority-button")) {
     li.classList.toggle("item-priority");
     event.target.classList.toggle("priority-btn-on");
-    saveTaskToServer()
+    const isPriority = li.classList.contains("item-priority");
+    await updateTask(id, { priority: isPriority });
   }
 });
 
@@ -266,22 +269,26 @@ function setActiveFilter(activeElement) {
   activeElement.classList.add("active");
 }
 
-// Complete tasks and clear completed tasks
-taskList.addEventListener("change", (event) => {
+// Cross completed tasks
+taskList.addEventListener("change", async (event) => {
   if (!event.target.classList.contains("checkbox")) return;
 
   const li = event.target.closest(".item");
+  const id = li.dataset.id;
   const currentTask = li.querySelector(".task-text");
+  const isCompleted = event.target.checked;
 
-  currentTask.classList.toggle("crossed");
+  currentTask.classList.toggle("crossed", isCompleted);
+
+  await updateTask(id, {completed: isCompleted});
 
   updateRemainingTasks();
   applyFilter(); 
   displayClearCompletedBtn();
   updateProgress();
-  saveTaskToServer()
 });
 
+// Clear completed tasks
 function displayClearCompletedBtn() {
   const items = taskList.querySelectorAll(".item");
   let isComplete = false;
@@ -296,17 +303,27 @@ function displayClearCompletedBtn() {
 }
 
 clearCompletedBtn.addEventListener("click", () => {
-  const items = taskList.querySelectorAll(".item");
-  items.forEach((li) => {
+  const completedItems = Array.from(taskList.querySelectorAll(".item")).filter(li => {
     const checkbox = li.querySelector(".checkbox");
-    if (checkbox.checked) li.remove();
+    return checkbox.checked;
+  }); 
+  
+  const deletePromises = completedItems.map(li => {
+    const id = li.dataset.id;
+    return deleteTask(id).then(() => {
+      li.remove();
+    });
+  });
+
+  Promise.all(deletePromises)
+  .catch((error) => {
+    console.error("Error while deleting tasks : ", error);
   });
 
   updateRemainingTasks();
   applyFilter();
   displayClearCompletedBtn();
   toggleEmptyState();
-  saveTaskToServer()
 });
 
 // Update remaining active tasks
@@ -348,6 +365,7 @@ const Confetti = () => {
 };
 
 const loadTaskFromServer = async () => {
+  taskList.innerHTML = "";
   let uri = 'http://localhost:3000/tasks?_sort=createdAt';
   const res = await fetch(uri);
   const tasks = await res.json();
@@ -356,23 +374,63 @@ const loadTaskFromServer = async () => {
       text: task.text,
       completed: task.completed,
       createdAt: task.createdAt,
-      priority: task.priority
+      priority: task.priority,
+      id: task.id
     });
   });
 }
 
+async function updateTask(id, patch) {
+  const res = await fetch(`http://localhost:3000/tasks/${id}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(patch)
+  });
+
+  if (!res.ok) {
+    throw new Error(`HTTP Error ${res.status}`);
+  }
+
+  return await res.json();
+}
+
+async function deleteTask(id) {
+  const res = await fetch(`http://localhost:3000/tasks/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  });
+
+  if (!res.ok) {
+    throw new Error(`HTTP Error ${res.status}`);
+  }
+
+  return await res.json();
+}
+
+// Clear all tasks
 clearAllBtn.addEventListener("click", clearAll);
-function clearAll () {
+async function clearAll () {
   if (confirm("This will delete all tasks PERMANENTLY, please confirm")) {
-    const tasks = taskList.querySelectorAll("li");
-    tasks.forEach(li => li.remove());
-    // Remove local storage
-    localStorage.removeItem("tasks");
+    const items = Array.from(taskList.querySelectorAll(".item"));
+    
+    const deletePromises = items.map(async li => {
+      const id = li.dataset.id;
+      return deleteTask(id).then(() => {
+        li.remove();
+      });
+    });
+  
+    Promise.all(deletePromises)
+    .catch((error) => {
+      console.error("Error while deleting tasks : ", error);
+    });
   } else {
     return;
   };
-
-  init();
   }
 
 function init() {
