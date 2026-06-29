@@ -144,20 +144,25 @@ async function addNewItem(save = true, taskData = null) {
 };
 
 // Drag and drop items
+let selected = null;
 taskList.addEventListener("dragstart", (event) => {
-  let selected = event.target.closest(".item");
-  const id = selected.dataset.id;
-  if (!selected) return;
+  selected = event.target.closest(".item");
+});
   
-  taskList.addEventListener("dragover", (event) => {
-    event.preventDefault();
-  });
+taskList.addEventListener("dragover", (event) => {
+  event.preventDefault();
+});
 
-  taskList.addEventListener("drop", (event) => {
-    taskList.prepend(selected);
-    selected = null;
-    updateTask(id, {});
-  });
+taskList.addEventListener("drop", async () => {
+  if (!selected) return;
+
+  taskList.prepend(selected);
+  try {
+    await updateTask(selected.dataset.id, {});
+  } catch (error) {
+    console.error(error);
+  }
+ selected = null;
 });
 
 // Event listener on taskList to manage events
@@ -219,7 +224,11 @@ taskList.addEventListener("click", async (event) => {
     li.classList.toggle("item-priority");
     event.target.classList.toggle("priority-btn-on");
     const isPriority = li.classList.contains("item-priority");
-    await updateTask(id, { priority: isPriority });
+    try {
+      await updateTask(id, { priority: isPriority });
+  } catch (error) {
+      console.error(error);
+  }
   }
 });
 
@@ -260,7 +269,6 @@ function applyFilter() {
       li.style.display = "flex";
     }
   });
-  displayClearCompletedBtn();
   toggleEmptyState();
 }
 
@@ -280,12 +288,16 @@ taskList.addEventListener("change", async (event) => {
 
   currentTask.classList.toggle("crossed", isCompleted);
 
-  await updateTask(id, {completed: isCompleted});
-
   updateRemainingTasks();
   applyFilter(); 
   displayClearCompletedBtn();
   updateProgress();
+
+  try {
+    await updateTask(id, {completed: isCompleted});
+  } catch(error) {
+    console.error(error);
+  }
 });
 
 // Clear completed tasks
@@ -299,31 +311,28 @@ function displayClearCompletedBtn() {
   }
 
   clearCompletedBtn.style.display = isComplete ? "flex" : "none";
-  toggleEmptyState();
 }
 
-clearCompletedBtn.addEventListener("click", () => {
-  const completedItems = Array.from(taskList.querySelectorAll(".item")).filter(li => {
-    const checkbox = li.querySelector(".checkbox");
-    return checkbox.checked;
-  }); 
-  
-  const deletePromises = completedItems.map(li => {
-    const id = li.dataset.id;
-    return deleteTask(id).then(() => {
-      li.remove();
-    });
-  });
+clearCompletedBtn.addEventListener("click", async () => {
+  try {
+    const completedItems = Array.from(taskList.querySelectorAll(".item"))
+      .filter(li => li.querySelector(".checkbox").checked);
 
-  Promise.all(deletePromises)
-  .catch((error) => {
-    console.error("Error while deleting tasks : ", error);
-  });
+    await Promise.all(
+      completedItems.map(async (li) => {
+        await deleteTask(li.dataset.id);
+        li.remove();
+      })
+    );
 
-  updateRemainingTasks();
-  applyFilter();
-  displayClearCompletedBtn();
-  toggleEmptyState();
+    updateRemainingTasks();
+    applyFilter();
+    displayClearCompletedBtn();
+    toggleEmptyState();
+
+  } catch (error) {
+    console.error("Error while deleting tasks:", error);
+  }
 });
 
 // Update remaining active tasks
@@ -366,18 +375,20 @@ const Confetti = () => {
 
 const loadTaskFromServer = async () => {
   taskList.innerHTML = "";
-  let uri = 'http://localhost:3000/tasks?_sort=createdAt';
-  const res = await fetch(uri);
-  const tasks = await res.json();
-  tasks.forEach(task => {
-    addNewItem(false, {
-      text: task.text,
-      completed: task.completed,
-      createdAt: task.createdAt,
-      priority: task.priority,
-      id: task.id
-    });
-  });
+  try {const res = await fetch('http://localhost:3000/tasks?_sort=createdAt');
+    const tasks = await res.json();
+    tasks.forEach(task => {
+      addNewItem(false, {
+        text: task.text,
+        completed: task.completed,
+        createdAt: task.createdAt,
+        priority: task.priority,
+        id: task.id
+      });
+    });} catch(error) {
+      console.log("Error when loading tasks from server : ", error);
+    }
+  
 }
 
 async function updateTask(id, patch) {
@@ -414,23 +425,22 @@ async function deleteTask(id) {
 // Clear all tasks
 clearAllBtn.addEventListener("click", clearAll);
 async function clearAll () {
-  if (confirm("This will delete all tasks PERMANENTLY, please confirm")) {
-    const items = Array.from(taskList.querySelectorAll(".item"));
-    
-    const deletePromises = items.map(async li => {
-      const id = li.dataset.id;
-      return deleteTask(id).then(() => {
-        li.remove();
-      });
-    });
-  
-    Promise.all(deletePromises)
-    .catch((error) => {
-      console.error("Error while deleting tasks : ", error);
-    });
-  } else {
+  if (!confirm("This will delete all tasks PERMANENTLY, please confirm")) {
     return;
-  };
+  }
+  try {
+  const items = Array.from(taskList.querySelectorAll(".item"));
+  
+  const deleteTasks = items.map(async li => {
+    const id = li.dataset.id;
+    await deleteTask(id)
+    li.remove();
+  });
+
+  await Promise.all(deleteTasks)
+  } catch(error) {
+      console.error("Error while deleting tasks : ", error);
+    };
   }
 
 function init() {
