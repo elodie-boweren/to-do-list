@@ -59,6 +59,14 @@ const toggleEmptyState = () => {
   emptyImage.style.display = visibleItem === 0 ? "block" : "none";
 };
 
+// Refresh display after changes
+function refreshUI() {
+  updateRemainingTasks();
+  displayClearCompletedBtn();
+  applyFilter();
+  toggleEmptyState();
+}
+
 // Add a task
 addBtn.addEventListener("click", addNewItem);
 newItemInput.addEventListener("keydown", (event) => {
@@ -73,12 +81,14 @@ async function addNewItem(save = true, taskData = null) {
     const completed = taskData?.completed ?? false;
     const priority = taskData?.priority ?? false;
     const id = taskData?.id ?? null;
+    const order = taskData?.order ?? null;
   
     const newLi = document.createElement("li");
     newLi.classList.add("item");
     newLi.setAttribute("draggable", "true");
     newLi.dataset.createdAt = createdAt;
     newLi.dataset.id = id;
+    newLi.dataset.order = order;
 
     newLi.innerHTML = `
   <input class="checkbox" type="checkbox" aria-label="checkbox" ${completed ? "checked" : ""}>
@@ -107,7 +117,8 @@ async function addNewItem(save = true, taskData = null) {
           text: value,
           createdAt: createdAt,
           completed: completed,
-          priority: priority
+          priority: priority,
+          order: order
         })
       });
       const createdTask = await res.json();
@@ -132,10 +143,7 @@ async function addNewItem(save = true, taskData = null) {
   
     if (!taskData) newItemInput.value = "";
   
-    applyFilter();
-    updateRemainingTasks();
-    displayClearCompletedBtn();
-    toggleEmptyState();
+    refreshUI();
 
     } else {
       if (!taskData) alert("Enter a task (field cannot be empty)");
@@ -151,18 +159,32 @@ taskList.addEventListener("dragstart", (event) => {
   
 taskList.addEventListener("dragover", (event) => {
   event.preventDefault();
+
+  const target = event.target.closest(".item");
+
+  if (!target || target === selected) return;
+
+  const rect = target.getBoundingClientRect();
+  const middle = rect.top + rect.height / 2;
+
+  if (event.clientY < middle) {
+    taskList.insertBefore(selected, target);
+  } else {
+    taskList.insertBefore(selected, target.nextSibling);
+  }
+
+  const items = [...taskList.querySelectorAll(".item")];
+
+  items.forEach(async (li, index) => {
+    await updateTask(li.dataset.id, {
+      order: index
+    });
 });
 
-taskList.addEventListener("drop", async () => {
-  if (!selected) return;
+});
 
-  taskList.prepend(selected);
-  try {
-    await updateTask(selected.dataset.id, {});
-  } catch (error) {
-    console.error(error);
-  }
- selected = null;
+taskList.addEventListener("drop", (event) => {
+  event.preventDefault();
 });
 
 // Event listener on taskList to manage events
@@ -175,10 +197,8 @@ taskList.addEventListener("click", async (event) => {
   if (event.target.classList.contains("delete-task")) {
 
     if (confirm("Delete this item FOREVER???")) {
-      deleteTask(id);
-      updateRemainingTasks();
-      displayClearCompletedBtn();
-      toggleEmptyState();
+      await deleteTask(id);
+      refreshUI();
       return;
     } else {
       return;
@@ -236,8 +256,7 @@ taskList.addEventListener("click", async (event) => {
 showAllBtn.addEventListener("click", () => {
   currentFilter = "all";
   setActiveFilter(showAllBtn);
-  applyFilter();
-  toggleEmptyState();
+  refreshUI();
 });
 
 activeBtn.addEventListener("click", () => {
@@ -325,10 +344,7 @@ clearCompletedBtn.addEventListener("click", async () => {
       })
     );
 
-    updateRemainingTasks();
-    applyFilter();
-    displayClearCompletedBtn();
-    toggleEmptyState();
+    refreshUI();
 
   } catch (error) {
     console.error("Error while deleting tasks:", error);
@@ -351,7 +367,7 @@ function updateRemainingTasks() {
 }
 
 // Update progress
-const updateProgress = (checkCompletion = true) => {
+const updateProgress = () => {
   const totalTasks = taskList.children.length;
   const completedTasksCount = Array.from(taskList.querySelectorAll(".checkbox"))
     .filter(cb => cb.checked).length;
@@ -362,20 +378,37 @@ const updateProgress = (checkCompletion = true) => {
 }
 
 const Confetti = () => {
-  function randomInRange(min, max) {
-    return Math.random() * (max - min) + min;
-  }
-  confetti({
-    angle: randomInRange(55, 125),
-    spread: randomInRange(50, 70),
-    particleCount: randomInRange(50, 100),
-    origin: { y: .6 }
-  });
+  const count = 200,
+  defaults = { origin: { y: .7 } };
+
+function fire(particleRatio, opts) {
+  confetti(Object.assign({}, defaults, opts, { particleCount: Math.floor(count * particleRatio) }));
+}
+fire(.25, {
+  spread: 26,
+  startVelocity: 55
+});
+fire(.2, { spread: 60 });
+fire(.35, {
+  spread: 100,
+  decay: .91,
+  scalar: .8
+});
+fire(.1, {
+  spread: 120,
+  startVelocity: 25,
+  decay: .92,
+  scalar: 1.2
+});
+fire(.1, {
+  spread: 120,
+  startVelocity: 45
+});
 };
 
 const loadTaskFromServer = async () => {
   taskList.innerHTML = "";
-  try {const res = await fetch('http://localhost:3000/tasks?_sort=createdAt');
+  try {const res = await fetch('http://localhost:3000/tasks?_sort=order');
     const tasks = await res.json();
     tasks.forEach(task => {
       addNewItem(false, {
@@ -446,9 +479,7 @@ async function clearAll () {
 function init() {
   loadTaskFromServer();
   setActiveFilter(showAllBtn);
-  updateRemainingTasks();
-  displayClearCompletedBtn();
-  toggleEmptyState();
+  refreshUI();
  
   // Apply last theme applied
   const savedTheme = localStorage.getItem('themeKey');
